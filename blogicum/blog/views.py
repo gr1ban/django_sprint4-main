@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import Http404
-from django.utils import timezone  # timezone
+from django.utils import timezone  
 
 from .forms import PostForm, CommentForm, UserForm
 from .models import Post, Category, User, Comment
@@ -36,7 +36,7 @@ def index(request):
     posts = get_posts(
         is_published=True,
         category__is_published=True,
-        pub_date__lte=timezone.now())  # Использование timezone.now()
+        pub_date__lte=timezone.now())  
     page_obj = get_paginated_page(request, posts)
     context = {'page_obj': page_obj}
     return render(request, 'blog/index.html', context)
@@ -58,7 +58,6 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True
     )
-    # Фильтр по категории уже есть в get_filtered_posts_qs, но добавляем явно для читаемости
     posts = get_filtered_posts_qs().filter(
         category=category
     )
@@ -72,7 +71,6 @@ def post_detail(request, post_id):
     try:
         post = Post.objects.get(id=post_id)
 
-        # Проверяем, опубликован пост или если не опубликован, то является ли пользователь автором этого поста.
         if not post.is_published and post.author != request.user:
             raise Http404("Пост не найден")
     except Post.DoesNotExist:
@@ -82,7 +80,6 @@ def post_detail(request, post_id):
     comments = Comment.objects.select_related('author').filter(post=post)
     context = {'post': post, 'form': form, 'comments': comments}
     return render(request, 'blog/post_detail.html', context)
-
 
 
 @login_required
@@ -177,7 +174,7 @@ def profile(request, username):
         posts = get_posts(
             is_published=True,
             category__is_published=True,
-            pub_date__lte=timezone.now(),  # Использование timezone.now()
+            pub_date__lte=timezone.now(), 
             author=profile)
     page_obj = get_paginated_page(request, posts)
     context = {'profile': profile,
