@@ -22,7 +22,7 @@ def get_posts(**kwargs):
 
 
 def get_paginated_page(request, queryset,
-                  number_of_pages = NUMBER_OF_PAGINATOR_PAGES):
+                       number_of_pages=NUMBER_OF_PAGINATOR_PAGES):
     """Получение страницы из queryset для пагинации, по N-шт на странице."""
     paginator = Paginator(queryset, number_of_pages)
     page_number = request.GET.get('page')
