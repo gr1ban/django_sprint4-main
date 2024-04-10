@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import Http404
-from django.utils import timezone
+from django.utils import timezone  # timezone
 
 from .forms import PostForm, CommentForm, UserForm
 from .models import Post, Category, User, Comment
@@ -29,24 +29,22 @@ def get_paginated_page(request, queryset,
     return paginator.get_page(page_number)
 
 
-def index(request):
-    """Главная страница / Лента публикаций."""
-    posts = get_posts(
-        is_published=True,
-        category__is_published=True,
-        pub_date__lte=timezone.now())
-    page_obj = get_paginated_page(request, posts)
-    context = {'page_obj': page_obj}
-    return render(request, 'blog/index.html', context)
-
-
 def get_filtered_posts_qs():
     """Получение queryset постов с общими условиями фильтрации."""
     return Post.objects.filter(
         is_published=True,
         category__is_published=True,
         pub_date__lte=timezone.now()
-    ).order_by('-pub_date')
+    )
+
+
+def index(request):
+    """Главная страница / Лента публикаций."""
+    posts = get_filtered_posts_qs().annotate(comment_count=Count('comments')
+                                             ).order_by('-pub_date')
+    page_obj = get_paginated_page(request, posts)
+    context = {'page_obj': page_obj}
+    return render(request, 'blog/index.html', context)
 
 
 def category_posts(request, category_slug):
@@ -56,7 +54,8 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True
     )
-    posts = get_filtered_posts_qs().filter(
+    # Фильтр уже есть в get_filtered_posts_qs, но добавляем для читаемости
+    posts = get_filtered_posts_qs().order_by('-pub_date').filter(
         category=category
     )
     page_obj = get_paginated_page(request, posts)
@@ -167,13 +166,12 @@ def profile(request, username):
     profile = get_object_or_404(
         User,
         username=username)
+
     posts = get_posts(author=profile)
     if request.user != profile:
-        posts = get_posts(
-            is_published=True,
-            category__is_published=True,
-            pub_date__lte=timezone.now(),
-            author=profile)
+        posts = (get_filtered_posts_qs().filter(author=profile).
+                 annotate(comment_count=Count('comments')
+                          ).order_by('-pub_date'))
     page_obj = get_paginated_page(request, posts)
     context = {'profile': profile,
                'page_obj': page_obj}
